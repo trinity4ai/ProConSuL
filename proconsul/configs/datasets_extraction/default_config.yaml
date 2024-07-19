@@ -1,0 +1,17 @@
+dataroot: '/path_to_repos'
+repos_info_path: '/path_to_info/info.csv'
+
+test_repo_lang_names: ['ffmpeg', 'libuv', 'wrk', 'openssl']
+test_paths: ['/llvm-project/clang-tools-extra/clang-tidy']
+train_repo_lang_names: [ 'linux', 'gpac', 'redis', 'mbed-os', 'SQLiteCpp', 'flecs', 'SQLAdvisor', 'aubio', 'CMake',
+                         'libtomcrypt', 'bdwgc', 'nng', 'zstd', 'likwid', 'PDF-Writer', 'libevent', 'llama.cpp',
+                         'iondb', 'unicorn', 'xLua', 'capstone', 'GraphicsGems', 'LuaBridge', 'curl', 'llvm-project' ]
+
+defaults:
+  - _self_
+
+# to supress logging in folder
+hydra:  
+  output_subdir: null  
+  run:
+    dir: .

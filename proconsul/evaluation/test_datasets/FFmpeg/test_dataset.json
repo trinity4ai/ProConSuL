@@ -1,0 +1,334 @@
+{
+  "FFmpeg/00251A20B9DE6252": {
+    "name": "wnv1_get_code",
+    "path": "/repos/FFmpeg/FFmpeg/libavcodec/wnv1.c",
+    "doc": "returns modified base_value ",
+    "code": "static inline int wnv1_get_code(GetBitContext *gb, int shift, int base_value)\n{\n    int v = get_vlc2(gb, code_vlc, CODE_VLC_BITS, 1);\n\n    if (v == 8)\n        return get_bits(gb, 8 - shift) << shift;\n    else\n        return base_value + v * (1 << shift);\n}",
+    "to": [
+      "FF88E60D2C78CB4B",
+      "1767FE3A90F0C9A5"
+    ],
+    "system": false,
+    "vendor": false,
+    "comments_in_code": false,
+    "used_in_to": 1,
+    "used_in_fact": 1,
+    "used_in_test": false,
+    "context_needed": "no",
+    "sufficiency_claims": [
+      "that base_value is modified",
+      "that VLC (table) is used",
+      "that shift is used",
+      "that code is read from bitstream"
+    ],
+    "illegal_facts": [
+      "that a code is shifted down"
+    ]
+  },
+  "FFmpeg/00779D8C182BA6C8": {
+    "name": "parse_palette_segment",
+    "path": "/repos/FFmpeg/FFmpeg/libavcodec/pgssubdec.c",
+    "doc": "\n Parse the palette segment packet.\n\n The palette segment contains details of the palette,\n a maximum of 256 colors can be defined.\n\n @param avctx contains the current codec context\n @param buf pointer to the packet to process\n @param buf_size size of packet to process\n ",
+    "code": "static int parse_palette_segment(AVCodecContext *avctx,\n                                  const uint8_t *buf, int buf_size)\n{\n    PGSSubContext *ctx = avctx->priv_data;\n    PGSSubPalette *palette;\n\n    const uint8_t *buf_end = buf + buf_size;\n    const uint8_t *cm      = ff_crop_tab + MAX_NEG_CROP;\n    int color_id;\n    int y, cb, cr, alpha;\n    int r, g, b, r_add, g_add, b_add;\n    int id;\n\n    id  = bytestream_get_byte(&buf);\n    palette = find_palette(id, &ctx->palettes);\n    if (!palette) {\n        if (ctx->palettes.count >= MAX_EPOCH_PALETTES) {\n            av_log(avctx, AV_LOG_ERROR, \"Too many palettes in epoch\\n\");\n            return AVERROR_INVALIDDATA;\n        }\n        palette = &ctx->palettes.palette[ctx->palettes.count++];\n        palette->id  = id;\n    }\n\n    /* Skip palette version */\n    buf += 1;\n\n    while (buf < buf_end) {\n        color_id  = bytestream_get_byte(&buf);\n        y         = bytestream_get_byte(&buf);\n        cr        = bytestream_get_byte(&buf);\n        cb        = bytestream_get_byte(&buf);\n        alpha     = bytestream_get_byte(&buf);\n\n        /* Default to BT.709 colorspace. In case of <= 576 height use BT.601 */\n        if (avctx->height <= 0 || avctx->height > 576) {\n            YUV_TO_RGB1_CCIR_BT709(cb, cr);\n        } else {\n            YUV_TO_RGB1_CCIR(cb, cr);\n        }\n\n        YUV_TO_RGB2_CCIR(r, g, b, y);\n\n        ff_dlog(avctx, \"Color %d := (%d,%d,%d,%d)\\n\", color_id, r, g, b, alpha);\n\n        /* Store color in palette */\n        palette->clut[color_id] = RGBA(r,g,b,alpha);\n    }\n    return 0;\n}",
+    "to": [
+      "F23347ACCA26C254",
+      "5889C0CD5279460A",
+      "A26AC71A20065D66",
+      "54EBCFEDB4FC1CF8",
+      "41A07F73ECE06CA1",
+      "30A60E8FA2EB0500"
+    ],
+    "system": false,
+    "vendor": false,
+    "comments_in_code": true,
+    "used_in_to": 1,
+    "used_in_fact": 1,
+    "used_in_test": false,
+    "context_needed": "no",
+    "sufficiency_claims": [
+      "that a palette segment is parsed",
+      "that colors are stored in the palette",
+      "that maximum 256 colors can be defined"
+    ],
+    "illegal_facts": [
+      "that error is returned if palette is not found",
+      "about YUV_TO_RGB"
+    ]
+  },
+  "FFmpeg/00926A3925632E20": {
+    "name": "av_pkt_dump_log2",
+    "path": "/repos/FFmpeg/FFmpeg/libavformat/dump.c",
+    "doc": "\n Send a nice dump of a packet to the log.\n\n @param avcl A pointer to an arbitrary struct of which the first field is a\n pointer to an AVClass struct.\n @param level The importance level of the message, lower values signifying\n higher importance.\n @param pkt packet to dump\n @param dump_payload True if the payload must be displayed, too.\n @param st AVStream that the packet belongs to\n ",
+    "code": "void av_pkt_dump_log2(void *avcl, int level, const AVPacket *pkt, int dump_payload,\n                      const AVStream *st)\n{\n    pkt_dump_internal(avcl, NULL, level, pkt, dump_payload, st->time_base);\n}",
+    "to": [
+      "5B70335EAEBC60D0"
+    ],
+    "system": false,
+    "vendor": false,
+    "context_needed": "callee",
+    "sufficiency_claims": [
+      "that a dump is sent to log",
+      "about a dump of a packet",
+      "about a hex dump",
+      "that level is used"
+    ],
+    "illegal_facts": [
+      "that errors are sent to the log",
+      "about avcl->logctx",
+      "about palette"
+    ]
+  },
+  "FFmpeg/0098C52D9A78F2BF": {
+    "name": "ensure_playlist",
+    "path": "/repos/FFmpeg/FFmpeg/libavformat/hls.c",
+    "doc": "used by parse_playlist to allocate a new variant+playlist when the\nplaylist is detected to be a Media Playlist (not Master Playlist)\nand we have no parent Master Playlist (parsing of which would have\nallocated the variant and playlist already)\n*pls == NULL  => Master Playlist or parentless Media Playlist\n*pls != NULL => parented Media Playlist, playlist+variant allocated ",
+    "code": "static int ensure_playlist(HLSContext *c, struct playlist **pls, const char *url)\n{\n    if (*pls)\n        return 0;\n    if (!new_variant(c, NULL, url, NULL))\n        return AVERROR(ENOMEM);\n    *pls = c->playlists[c->n_playlists - 1];\n    return 0;\n}",
+    "to": [
+      "57060666007D2C2D"
+    ],
+    "system": false,
+    "vendor": false,
+    "context_needed": "project",
+    "sufficiency_claims": [
+      "about ensure a playlist exists",
+      "that playlist is created if needed",
+      "about memory allocation"
+    ],
+    "illegal_facts": [
+      "that a pointer to a track is returned",
+      "about URL"
+    ]
+  },
+  "FFmpeg/00C530E65D73355C": {
+    "name": "dxt5ys_block",
+    "path": "/repos/FFmpeg/FFmpeg/libavcodec/texturedspenc.c",
+    "doc": "\n Compress one block of RGBA pixels in a DXT5-YCoCg texture and store the\n resulting bytes in 'dst'. Alpha is not preserved.\n\n @param dst    output buffer.\n @param stride scanline in bytes.\n @param block  block to compress.\n @return how much texture data has been written.\n ",
+    "code": "static int dxt5ys_block(uint8_t *dst, ptrdiff_t stride, const uint8_t *block)\n{\n    int x, y;\n    uint8_t reorder[64];\n\n    /* Reorder the components and then run a normal DXT5 compression. */\n    for (y = 0; y < 4; y++)\n        for (x = 0; x < 4; x++)\n            rgba2ycocg(reorder + x * 4 + y * 16, block + x * 4 + y * stride);\n\n    compress_alpha(dst + 0, 16, reorder);\n    compress_color(dst + 8, 16, reorder);\n\n    return 16;\n}",
+    "to": [
+      "B5D6184B23DEFA6D",
+      "F3E3735F0270774F"
+    ],
+    "system": false,
+    "vendor": false,
+    "context_needed": "no",
+    "sufficiency_claims": [
+      "that a block of pixels is compressed",
+      "about 4x4 block of pixels",
+      "about RGBA data",
+      "that alpha is not saved",
+      "about DXT5 compression",
+      "about YCoCg or YCgCo",
+      "that data is stored in the dst"
+    ],
+    "illegal_facts": [
+      "about save into alpha block"
+    ]
+  },
+  "FFmpeg/01DF208ABAD35C37": {
+    "name": "ls_encode_runterm",
+    "path": "/repos/FFmpeg/FFmpeg/libavcodec/jpeglsenc.c",
+    "doc": "\n Encode error from run termination\n ",
+    "code": "static inline void ls_encode_runterm(JLSState *state, PutBitContext *pb,\n                                     int RItype, int err, int limit_add)\n{\n    int k;\n    int val, map;\n    int Q = 365 + RItype;\n    int temp;\n\n    temp = state->A[Q];\n    if (RItype)\n        temp += state->N[Q] >> 1;\n    for (k = 0; (state->N[Q] << k) < temp; k++)\n        ;\n    map = 0;\n    if (!k && err && (2 * state->B[Q] < state->N[Q]))\n        map = 1;\n\n    if (err < 0)\n        val = -(2 * err) - 1 - RItype + map;\n    else\n        val = 2 * err - RItype - map;\n    set_ur_golomb_jpegls(pb, val, k, state->limit - limit_add - 1, state->qbpp);\n\n    if (err < 0)\n        state->B[Q]++;\n    state->A[Q] += (val + 1 - RItype) >> 1;\n\n    ff_jpegls_downscale_state(state, Q);\n}",
+    "to": [
+      "C29C3F39A619ED2A",
+      "231CF19D01DA8231"
+    ],
+    "system": false,
+    "vendor": false,
+    "context_needed": "project",
+    "sufficiency_claims": [
+      "about run termination",
+      "that run termination error is encoded",
+      "about the Golomb-Rice code",
+      "about JPEG-LS standard"
+    ],
+    "illegal_facts": [
+      "that error is decoded"
+    ]
+  },
+  "FFmpeg/031173DD340DF627": {
+    "name": "mxf_get_next_track_edit_unit",
+    "path": "/repos/FFmpeg/FFmpeg/libavformat/mxfdec.c",
+    "doc": "Get the edit unit of the next packet from current_offset in a track. The returned edit unit can be original_duration as well! ",
+    "code": "static int mxf_get_next_track_edit_unit(MXFContext *mxf, MXFTrack *track, int64_t current_offset, int64_t *edit_unit_out)\n{\n    int64_t a, b, m, offset;\n    MXFIndexTable *t = mxf_find_index_table(mxf, track->index_sid);\n\n    if (!t || track->original_duration <= 0)\n        return -1;\n\n    a = -1;\n    b = track->original_duration;\n\n    while (b - a > 1) {\n        m = (a + b) >> 1;\n        if (mxf_edit_unit_absolute_offset(mxf, t, m, track->edit_rate, NULL, &offset, NULL, 0) < 0)\n            return -1;\n        if (offset < current_offset)\n            a = m;\n        else\n            b = m;\n    }\n\n    *edit_unit_out = b;\n\n    return 0;\n}",
+    "to": [
+      "3E32386FC2A94078",
+      "59855FD34D712472"
+    ],
+    "system": false,
+    "vendor": false,
+    "context_needed": "not necessary: project",
+    "sufficiency_claims": [
+      "about next edit unit",
+      "about the current offset",
+      "about track",
+      "that the next track edit unit is returned",
+      "that an error is returned on failure"
+    ],
+    "illegal_facts": [
+      "that AVERROR_INVALIDDATA is returned on failure",
+      "about calling mxf_read_seek"
+    ]
+  },
+  "FFmpeg/03350038B57FFFE5": {
+    "name": "avfilter_graph_parse2",
+    "path": "/repos/FFmpeg/FFmpeg/libavfilter/graphparser.c",
+    "doc": "\n Add a graph described by a string to a graph.\n\n @param[in]  graph   the filter graph where to link the parsed graph context\n @param[in]  filters string to be parsed\n @param[out] inputs  a linked list of all free (unlinked) inputs of the\n                     parsed graph will be returned here. It is to be freed\n                     by the caller using avfilter_inout_free().\n @param[out] outputs a linked list of all free (unlinked) outputs of the\n                     parsed graph will be returned here. It is to be freed by the\n                     caller using avfilter_inout_free().\n @return zero on success, a negative AVERROR code on error\n\n @note This function returns the inputs and outputs that are left\n unlinked after parsing the graph and the caller then deals with\n them.\n @note This function makes no reference whatsoever to already\n existing parts of the graph and the inputs parameter will on return\n contain inputs of the newly parsed part of the graph.  Analogously\n the outputs parameter will contain outputs of the newly created\n filters.\n ",
+    "code": "int avfilter_graph_parse2(AVFilterGraph *graph, const char *filters,\n                          AVFilterInOut **inputs,\n                          AVFilterInOut **outputs)\n{\n    AVFilterGraphSegment *seg;\n    int ret;\n\n    ret = avfilter_graph_segment_parse(graph, filters, 0, &seg);\n    if (ret < 0)\n        return ret;\n\n    ret = avfilter_graph_segment_apply(seg, 0, inputs, outputs);\n    avfilter_graph_segment_free(&seg);\n    if (ret < 0)\n        goto end;\n\n    return 0;\n\nend:\n    while (graph->nb_filters)\n        avfilter_free(graph->filters[0]);\n    av_freep(&graph->filters);\n\n    return ret;\n}",
+    "to": [
+      "94F39F37D849D56D",
+      "1E73064AE5490761",
+      "0404C88F93B38A9F"
+    ],
+    "system": false,
+    "vendor": false,
+    "context_needed": "not necessary: project",
+    "sufficiency_claims": [
+      "that string contains filters",
+      "that filters are parsed",
+      "about filtergraph description",
+      "that filters are added to the graph",
+      "about free (unlinked) inputs or outputs"
+    ],
+    "illegal_facts": [
+      "that the number of filters is returned",
+      "that a new filter graph is created",
+      "that graph contains links",
+      "that -1 is returned on error",
+      "about avfilter_graph_segment_parse",
+      "about avfilter_graph_segment_apply"
+    ]
+  },
+  "FFmpeg/05BB55D974269A7E": {
+    "name": "isDataInHighBits",
+    "path": "/repos/FFmpeg/FFmpeg/libswscale/swscale_internal.h",
+    "doc": "\n Identity formats where the data is in the high bits, and the low bits are shifted away.\n ",
+    "code": "static av_always_inline int isDataInHighBits(enum AVPixelFormat pix_fmt)\n{\n    int i;\n    const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(pix_fmt);\n    av_assert0(desc);\n    if (desc->flags & (AV_PIX_FMT_FLAG_BITSTREAM | AV_PIX_FMT_FLAG_HWACCEL))\n        return 0;\n    for (i = 0; i < desc->nb_components; i++) {\n        if (!desc->comp[i].shift)\n            return 0;\n        if ((desc->comp[i].shift + desc->comp[i].depth) & 0x7)\n            return 0;\n    }\n    return 1;\n}",
+    "to": [
+      "E98C92191264256C",
+      "095267A1BAEDB933"
+    ],
+    "system": false,
+    "vendor": false,
+    "context_needed": "not necessary: project, enum",
+    "sufficiency_claims": [
+      "about checking the pixel format",
+      "about checks if the data is in the high bits",
+      "that 1 is returned if the data is in the high bits"
+    ],
+    "illegal_facts": [
+      "that 0 is returned if `shift` has non-zero value",
+      "about `depth` to be multiple of 8",
+      "about track"
+    ]
+  },
+  "FFmpeg/060211EF6106FF8B": {
+    "name": "cbs_clone_unit_content",
+    "path": "/repos/FFmpeg/FFmpeg/libavcodec/cbs.c",
+    "doc": "\n On success, unit->content and unit->content_ref are updated with\n the new content; unit is not changed on failure.\n Any old content_ref is simply overwritten and not freed.\n ",
+    "code": "static int cbs_clone_unit_content(CodedBitstreamContext *ctx,\n                                  CodedBitstreamUnit *unit)\n{\n    const CodedBitstreamUnitTypeDescriptor *desc;\n    void *new_content;\n    int err;\n\n    desc = cbs_find_unit_type_desc(ctx, unit);\n    if (!desc)\n        return AVERROR(ENOSYS);\n\n    switch (desc->content_type) {\n    case CBS_CONTENT_TYPE_INTERNAL_REFS:\n        err = cbs_clone_noncomplex_unit_content(&new_content, unit, desc);\n        break;\n\n    case CBS_CONTENT_TYPE_COMPLEX:\n        if (!desc->type.complex.content_clone)\n            return AVERROR_PATCHWELCOME;\n        err = desc->type.complex.content_clone(&new_content, unit);\n        break;\n\n    default:\n        av_assert0(0 && \"Invalid content type.\");\n    }\n\n    if (err < 0)\n        return err;\n\n    unit->content_ref = new_content;\n    unit->content     = new_content;\n    return 0;\n}",
+    "to": [
+      "85EBD6EDD046655E",
+      "57060666007D2C2D",
+      "095267A1BAEDB933"
+    ],
+    "system": false,
+    "vendor": false,
+    "context_needed": "not necessary: project",
+    "sufficiency_claims": [
+      "about clone the given unit",
+      "that unit content is updated",
+      "that content_ref is overwritten",
+      "that old content_ref is not freed"
+    ],
+    "illegal_facts": [
+      "that 0 is returned on error",
+      "that old content_ref is freed",
+      "about something not owned by the context"
+    ]
+  },
+  "FFmpeg/061AD7792BD96E8D": {
+    "name": "filter_frame",
+    "path": "/repos/FFmpeg/FFmpeg/libavfilter/vf_normalize.c",
+    "doc": "This function is pretty much standard from doc/writing_filters.txt.  It\ntries to do in-place filtering where possible, only allocating a new output\nframe when absolutely necessary.",
+    "code": "static int filter_frame(AVFilterLink *inlink, AVFrame *in)\n{\n    AVFilterContext *ctx = inlink->dst;\n    AVFilterLink *outlink = ctx->outputs[0];\n    NormalizeContext *s = ctx->priv;\n    AVFrame *out;\n    // Set 'direct' if we can modify the input frame in-place.  Otherwise we\n    // need to retrieve a new frame from the output link.\n    int direct = av_frame_is_writable(in) && !ctx->is_disabled;\n\n    if (direct) {\n        out = in;\n    } else {\n        out = ff_get_video_buffer(outlink, outlink->w, outlink->h);\n        if (!out) {\n            av_frame_free(&in);\n            return AVERROR(ENOMEM);\n        }\n        av_frame_copy_props(out, in);\n    }\n\n    // Now we've got the input and output frames (which may be the same frame)\n    // perform the filtering with our custom function.\n    normalize(s, in, out);\n\n    if (ctx->is_disabled) {\n        av_frame_free(&out);\n        return ff_filter_frame(outlink, in);\n    }\n\n    if (!direct)\n        av_frame_free(&in);\n\n    return ff_filter_frame(outlink, out);\n}",
+    "to": [
+      "EDE8C1E57D7D3905",
+      "6B4E94B181C5287A",
+      "C20C7B13256CED04",
+      "57060666007D2C2D",
+      "502B7D2993F03DEF",
+      "9AA692804D314955"
+    ],
+    "system": false,
+    "vendor": false,
+    "context_needed": "not necessary: project",
+    "sufficiency_claims": [
+      "about normalization filter",
+      "that a new frame is not created if possible",
+      "that a filtered frame is returned",
+      "about returning an error"
+    ],
+    "illegal_facts": [
+      "that an output frame is always new"
+    ]
+  },
+  "FFmpeg/A71407F3E4D3D29F": {
+    "name": "get_aiff_header",
+    "path": "/repos/FFmpeg/FFmpeg/libavformat/aiffdec.c",
+    "doc": "Returns the number of sound data frames or negative on error ",
+    "code": "static int get_aiff_header(AVFormatContext *s, int64_t size,\n                                    unsigned version)\n{\n    AVIOContext *pb        = s->pb;\n    AVCodecParameters *par = s->streams[0]->codecpar;\n    AIFFInputContext *aiff = s->priv_data;\n    int exp;\n    uint64_t val;\n    int sample_rate;\n    unsigned int num_frames;\n    int channels;\n\n    if (size & 1)\n        size++;\n    par->codec_type = AVMEDIA_TYPE_AUDIO;\n    channels = avio_rb16(pb);\n    par->ch_layout.nb_channels = channels;\n    num_frames = avio_rb32(pb);\n    par->bits_per_coded_sample = avio_rb16(pb);\n\n    exp = avio_rb16(pb) - 16383 - 63;\n    val = avio_rb64(pb);\n    if (exp <-63 || exp >63) {\n        av_log(s, AV_LOG_ERROR, \"exp %d is out of range\\n\", exp);\n        return AVERROR_INVALIDDATA;\n    }\n    if (exp >= 0)\n        sample_rate = val << exp;\n    else\n        sample_rate = (val + (1ULL<<(-exp-1))) >> -exp;\n    if (sample_rate <= 0)\n        return AVERROR_INVALIDDATA;\n\n    par->sample_rate = sample_rate;\n    if (size < 18)\n        return AVERROR_INVALIDDATA;\n    size -= 18;\n\n    /* get codec id for AIFF-C */\n    if (size < 4) {\n        version = AIFF;\n    } else if (version == AIFF_C_VERSION1) {\n        par->codec_tag = avio_rl32(pb);\n        par->codec_id  = ff_codec_get_id(ff_codec_aiff_tags, par->codec_tag);\n        if (par->codec_id == AV_CODEC_ID_NONE)\n            avpriv_request_sample(s, \"unknown or unsupported codec tag: %s\",\n                                  av_fourcc2str(par->codec_tag));\n        size -= 4;\n    }\n\n    if (version != AIFF_C_VERSION1 || par->codec_id == AV_CODEC_ID_PCM_S16BE) {\n        par->codec_id = aiff_codec_get_id(par->bits_per_coded_sample);\n        par->bits_per_coded_sample = av_get_bits_per_sample(par->codec_id);\n        aiff->block_duration = 1;\n    } else {\n        switch (par->codec_id) {\n        case AV_CODEC_ID_PCM_F32BE:\n        case AV_CODEC_ID_PCM_F64BE:\n        case AV_CODEC_ID_PCM_S16LE:\n        case AV_CODEC_ID_PCM_ALAW:\n        case AV_CODEC_ID_PCM_MULAW:\n            aiff->block_duration = 1;\n            break;\n        case AV_CODEC_ID_ADPCM_IMA_QT:\n            par->block_align = 34 * channels;\n            break;\n        case AV_CODEC_ID_MACE3:\n            par->block_align = 2 * channels;\n            break;\n        case AV_CODEC_ID_ADPCM_G726LE:\n            par->bits_per_coded_sample = 5;\n        case AV_CODEC_ID_ADPCM_IMA_WS:\n        case AV_CODEC_ID_ADPCM_G722:\n        case AV_CODEC_ID_MACE6:\n        case AV_CODEC_ID_CBD2_DPCM:\n        case AV_CODEC_ID_SDX2_DPCM:\n            par->block_align = 1 * channels;\n            break;\n        case AV_CODEC_ID_GSM:\n            par->block_align = 33;\n            break;\n        default:\n            aiff->block_duration = 1;\n            break;\n        }\n        if (par->block_align > 0)\n            aiff->block_duration = av_get_audio_frame_duration2(par,\n                                                                par->block_align);\n    }\n\n    /* Block align needs to be computed in all cases, as the definition\n     * is specific to applications -> here we use the WAVE format definition */\n    if (!par->block_align)\n        par->block_align = (av_get_bits_per_sample(par->codec_id) * channels) >> 3;\n\n    if (aiff->block_duration) {\n        par->bit_rate = av_rescale(par->sample_rate, par->block_align * 8LL,\n                                   aiff->block_duration);\n        if (par->bit_rate < 0)\n            par->bit_rate = 0;\n    }\n\n    /* Chunk is over */\n    if (size)\n        avio_skip(pb, size);\n\n    return num_frames;\n}",
+    "to": [
+      "15D0C20166D7E380",
+      "46AC3F09A486B1A6",
+      "46452E1735816BA2",
+      "6D65D7EA96CFACA2",
+      "4B4E1F986F4E8653",
+      "8C02DC03CE02DB16",
+      "CEC7D15DB7B197E1",
+      "4E57BB64E77FD0FE",
+      "C18FD9424D27CBC5",
+      "B12FEE6AE3F5EEB8",
+      "21238E70EBD7A566"
+    ],
+    "system": false,
+    "vendor": false,
+    "context_needed": "not necessary: project",
+    "sufficiency_claims": [
+      "about read the AIFF header",
+      "that a negative is returned on failure",
+      "about the number of frames",
+      "about extracting codec properties"
+    ],
+    "illegal_facts": [
+      "that the sample rate is read from AIFF header",
+      "that the number of channels is checked",
+      "that the number of frames is checked",
+      "that -1 can be returned"
+    ]
+  },
+  "FFmpeg/A75678961EAED3DF": {
+    "name": "av_frame_clone",
+    "path": "/repos/FFmpeg/FFmpeg/libavutil/frame.c",
+    "doc": "\n Create a new frame that references the same data as src.\n\n This is a shortcut for av_frame_alloc()+av_frame_ref().\n\n @return newly created AVFrame on success, NULL on error.\n ",
+    "code": "AVFrame *av_frame_clone(const AVFrame *src)\n{\n    AVFrame *ret = av_frame_alloc();\n\n    if (!ret)\n        return NULL;\n\n    if (av_frame_ref(ret, src) < 0)\n        av_frame_free(&ret);\n\n    return ret;\n}",
+    "to": [
+      "C77D70245C848F6A",
+      "C20C7B13256CED04"
+    ],
+    "system": false,
+    "vendor": false,
+    "context_needed": "not necessary: project",
+    "sufficiency_claims": [
+      "that data in src is cloned",
+      "that a clone of a frame is created",
+      "that the memory is freed if copy fails",
+      "that data is copied if not refcounted"
+    ],
+    "illegal_facts": [
+      "that initial frame is freed",
+      "that memory must be freed using av_frame_free()",
+      "about queue"
+    ]
+  }
+}

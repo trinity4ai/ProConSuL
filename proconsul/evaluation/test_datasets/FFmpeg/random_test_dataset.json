@@ -1,0 +1,164 @@
+{
+  "train": {
+  },
+  "test": {
+    "FFmpeg/A71277A3EF4AF12D": {
+      "name": "hnm_update_palette",
+      "path": "/repos/FFmpeg/FFmpeg/libavcodec/hnm4video.c",
+      "doc": "",
+      "code": "static void hnm_update_palette(AVCodecContext *avctx, const uint8_t *src,\n                               uint32_t size)\n{\n    Hnm4VideoContext *hnm = avctx->priv_data;\n    GetByteContext gb;\n    uint8_t start, writeoffset;\n    uint16_t count;\n    int eight_bit_colors;\n\n    eight_bit_colors = src[7] & 0x80 && hnm->version == 0x4a;\n\n    // skip first 8 bytes\n    bytestream2_init(&gb, src + 8, size - 8);\n\n    while (bytestream2_tell(&gb) < size - 8) {\n        start = bytestream2_get_byte(&gb);\n        count = bytestream2_get_byte(&gb);\n        if (start == 255 && count == 255)\n            break;\n        if (count == 0)\n            count = 256;\n        writeoffset = start;\n        while (count > 0) {\n            hnm->palette[writeoffset] = bytestream2_get_be24(&gb);\n            if (!eight_bit_colors)\n                hnm->palette[writeoffset] <<= 2;\n            hnm->palette[writeoffset] |= (0xFFU << 24);\n            count--;\n            writeoffset++;\n        }\n    }\n}",
+      "to": [
+        "9432414742E3B0F6",
+        "4D8BCC5DF4511DD2",
+        "DB9E62A58472E338",
+        "2578BA230522AC34"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "missing": false,
+      "vanilla_doc": "\"Updates the palette of the HNM4 video context based on the given source data.\"",
+      "context_needed": "not necessary: project, struct, callees",
+      "sufficiency_claims": [
+        "that the palette is updated",
+        "that the palette contains all colors from video",
+        "the HNM4 video",
+        "the video context",
+        "saving the palette in the context"
+      ],
+      "ToDo": "check the last claim",
+      "illegal_facts": [
+      ]
+    },
+    "FFmpeg/92C4FF4063623B3C": {
+      "name": "filter_query_formats",
+      "path": "/repos/FFmpeg/FFmpeg/libavfilter/avfiltergraph.c",
+      "doc": "",
+      "code": "static int filter_query_formats(AVFilterContext *ctx)\n{\n    int ret;\n\n    if (ctx->filter->formats_state == FF_FILTER_FORMATS_QUERY_FUNC) {\n        if ((ret = ctx->filter->formats.query_func(ctx)) < 0) {\n            if (ret != AVERROR(EAGAIN))\n                av_log(ctx, AV_LOG_ERROR, \"Query format failed for '%s': %s\\n\",\n                       ctx->name, av_err2str(ret));\n            return ret;\n        }\n\n        ret = filter_check_formats(ctx);\n        if (ret < 0)\n            return ret;\n    }\n\n    return ff_default_query_formats(ctx);\n}",
+      "to": [
+        "4C478B80EFEA50F2",
+        "11B299FFEAC1EA08",
+        "83EF92CDA4969C87",
+        "16124277C1B06313",
+        "EFC5EDA5E2BDF2A9",
+        "57060666007D2C2D",
+        "1A5D3C97B0859935"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "missing": false,
+      "vanilla_doc": "\"Calls the query_formats function of the filter if it exists, and otherwise calls the default query_formats function.\"",
+      "context_needed": "not necessary: project",
+      "sufficiency_claims": [
+        "that formats are set for the filter",
+        "that formats are checked for validity",
+        "that an error is logged if query_func fails",
+        "that 0 is returned on success",
+        "returning an error code"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "FFmpeg/C4C435109D9FED2E": {
+      "name": "add_info",
+      "path": "/repos/FFmpeg/FFmpeg/libavformat/nutenc.c",
+      "doc": "",
+      "code": "static int add_info(AVIOContext *bc, const char *type, const char *value)\n{\n    put_str(bc, type);\n    put_s(bc, -1);\n    put_str(bc, value);\n    return 1;\n}",
+      "to": [
+        "1BD2E277800C46A0",
+        "95290CDB27E82DC5"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "missing": false,
+      "vanilla_doc": "\"Adds information to the AVIOContext.\"",
+      "context_needed": "project",
+      "sufficiency_claims": [
+        "that type and value are written to the output",
+        "that strings are written using a buffer",
+        "that 1 is returned",
+        "that strings are written into bytestream"
+      ],
+      "ToDo": "check, is the word `bytestream` correct here?",
+      "illegal_facts": [
+      ]
+    },
+    "FFmpeg/3BFBF26873ABD71A": {
+      "name": "pjs_probe",
+      "path": "/repos/FFmpeg/FFmpeg/libavformat/pjsdec.c",
+      "doc": "",
+      "code": "static int pjs_probe(const AVProbeData *p)\n{\n    char c;\n    int64_t start, end;\n    const unsigned char *ptr = p->buf;\n\n    if (sscanf(ptr, \"%\"SCNd64\",%\"SCNd64\",%c\", &start, &end, &c) == 3) {\n        size_t q1pos = strcspn(ptr, \"\\\"\");\n        size_t q2pos = q1pos + strcspn(ptr + q1pos + 1, \"\\\"\") + 1;\n        if (strcspn(ptr, \"\\r\\n\") > q2pos)\n            return AVPROBE_SCORE_MAX;\n    }\n    return 0;\n}",
+      "to": [
+        "AE1BBBD73030518A",
+        "B679F231AAA1B425"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "missing": false,
+      "vanilla_doc": "\"Probes the input buffer for the presence of a valid PJS file header, returning a score indicating the likelihood of success if the header is found.\"",
+      "context_needed": "yes: project context, PJS format structure, std lib",
+      "sufficiency_claims": [
+        "verification of the data format",
+        "a PJS file header",
+        "the data in buffer",
+        "that 100 (or AVPROBE_SCORE_MAX) is returned if the data is in a specific format",
+        "that 0 is returned if checks fail"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "FFmpeg/22B4077926C4D03E": {
+      "name": "write_index",
+      "path": "/repos/FFmpeg/FFmpeg/libavformat/wtvenc.c",
+      "doc": "",
+      "code": "static void write_index(AVFormatContext *s)\n{\n    AVIOContext *pb = s->pb;\n    WtvContext *wctx = s->priv_data;\n    int i;\n\n    write_chunk_header2(s, &ff_index_guid, 0x80000000);\n    avio_wl32(pb, 0);\n    avio_wl32(pb, 0);\n\n    for (i = 0; i < wctx->nb_index; i++) {\n        WtvChunkEntry *t = wctx->index + i;\n        ff_put_guid(pb,  t->guid);\n        avio_wl64(pb, t->pos);\n        avio_wl32(pb, t->stream_id);\n        avio_wl32(pb, 0); // checksum?\n        avio_wl64(pb, t->serial);\n    }\n    wctx->nb_index = 0;   // reset index\n    finish_chunk_noindex(s);\n\n    if (!wctx->first_index_pos)\n        wctx->first_index_pos = wctx->last_chunk_pos;\n}",
+      "to": [
+        "C0A409862DAAC708",
+        "1C6D78410786D3FD",
+        "18BAAD1412A1230E",
+        "7F2037104405792E",
+        "3F07EDCB8948BE4D"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "missing": false,
+      "vanilla_doc": "\"Writes the index chunk to the WTV file. The index chunk contains a list of all the chunks in the file, along with their positions and serial numbers. The index is reset after this function is called.\"",
+      "context_needed": "not necessary: same file",
+      "sufficiency_claims": [
+        "index from priv_data",
+        "the buffer in AVIOContext",
+        "a chunk header",
+        "chunk entries",
+        "index reset",
+        "that the index is written to bytestream"
+      ],
+      "ToDo": "check, is the word `bytestream` correct here?",
+      "illegal_facts": [
+      ]
+    }
+  }
+}

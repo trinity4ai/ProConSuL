@@ -1,0 +1,34 @@
+cwd: "./"
+run_name: "debug"
+file_name: "${run_name}"
+
+path_after_extraction: "${cwd}data/after_extraction/${file_name}.json"
+path_after_processing: "${cwd}data/after_processing/${file_name}.json"
+path_after_synth: "${cwd}data/after_synth/${file_name}.json"
+path_after_synth_final: "${cwd}data/after_processing/${file_name}_synth_final.json"
+path_after_dedup_train: "${cwd}data/after_processing/${file_name}_deduped.json"
+path_after_obfuscation: "${cwd}data/after_processing/${file_name}_obfuscated.json"
+path_after_train: "${cwd}data/after_train/${run_name}/"
+path_after_predict: "${cwd}data/after_predict/${file_name}.json"
+path_after_predict_full: "${cwd}data/after_predict/${file_name}_full.json"
+path_after_llm_response: "${cwd}data/after_llm_response/${file_name}.json"
+path_after_annotation: "${cwd}data/after_annotation/WHO/${file_name}.json"
+path_after_metrics_calc: "${cwd}data/after_metrics_calc/${file_name}.json"
+path_after_autometrics_calc: "${cwd}data/after_metrics_calc/${file_name}_auto_metrics.json"
+
+defaults:
+  - datasets_extraction: default_config
+  - data_processing: default_config
+  - train: default_config
+  - predict: default_config
+  - evaluation: default_config
+  - synth: default_config
+  - _self_
+  # to suppress logging
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+
+hydra:
+  job:
+    env_set:
+      TOKENIZERS_PARALLELISM: "true"

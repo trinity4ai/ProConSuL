@@ -1,0 +1,184 @@
+{
+  "train": {
+  },
+  "test": {
+    "openssl/BD9C13AEA4308FE9": {
+      "name": "ossl_cms_RecipientInfo_pwri_crypt",
+      "path": "/repos/openssl/openssl/crypto/cms/cms_pwri.c",
+      "doc": "PWRI routines. Encrypt/Decrypt content key in PWRI recipient info",
+      "code": "int ossl_cms_RecipientInfo_pwri_crypt(const CMS_ContentInfo *cms,\n                                      CMS_RecipientInfo *ri, int en_de)\n{\n    CMS_EncryptedContentInfo *ec;\n    CMS_PasswordRecipientInfo *pwri;\n    int r = 0;\n    X509_ALGOR *algtmp, *kekalg = NULL;\n    EVP_CIPHER_CTX *kekctx = NULL;\n    char name[OSSL_MAX_NAME_SIZE];\n    EVP_CIPHER *kekcipher;\n    unsigned char *key = NULL;\n    size_t keylen;\n    const CMS_CTX *cms_ctx = ossl_cms_get0_cmsctx(cms);\n\n    ec = ossl_cms_get0_env_enc_content(cms);\n\n    pwri = ri->d.pwri;\n\n    if (pwri->pass == NULL) {\n        ERR_raise(ERR_LIB_CMS, CMS_R_NO_PASSWORD);\n        return 0;\n    }\n    algtmp = pwri->keyEncryptionAlgorithm;\n\n    if (!algtmp || OBJ_obj2nid(algtmp->algorithm) != NID_id_alg_PWRI_KEK) {\n        ERR_raise(ERR_LIB_CMS, CMS_R_UNSUPPORTED_KEY_ENCRYPTION_ALGORITHM);\n        return 0;\n    }\n\n    kekalg = ASN1_TYPE_unpack_sequence(ASN1_ITEM_rptr(X509_ALGOR),\n                                       algtmp->parameter);\n\n    if (kekalg == NULL) {\n        ERR_raise(ERR_LIB_CMS, CMS_R_INVALID_KEY_ENCRYPTION_PARAMETER);\n        return 0;\n    }\n\n    OBJ_obj2txt(name, sizeof(name), kekalg->algorithm, 0);\n    kekcipher = EVP_CIPHER_fetch(ossl_cms_ctx_get0_libctx(cms_ctx), name,\n                                 ossl_cms_ctx_get0_propq(cms_ctx));\n\n    if (kekcipher == NULL) {\n        ERR_raise(ERR_LIB_CMS, CMS_R_UNKNOWN_CIPHER);\n        goto err;\n    }\n\n    kekctx = EVP_CIPHER_CTX_new();\n    if (kekctx == NULL) {\n        ERR_raise(ERR_LIB_CMS, ERR_R_EVP_LIB);\n        goto err;\n    }\n    /* Fixup cipher based on AlgorithmIdentifier to set IV etc */\n    if (!EVP_CipherInit_ex(kekctx, kekcipher, NULL, NULL, NULL, en_de))\n        goto err;\n    EVP_CIPHER_CTX_set_padding(kekctx, 0);\n    if (EVP_CIPHER_asn1_to_param(kekctx, kekalg->parameter) <= 0) {\n        ERR_raise(ERR_LIB_CMS, CMS_R_CIPHER_PARAMETER_INITIALISATION_ERROR);\n        goto err;\n    }\n\n    algtmp = pwri->keyDerivationAlgorithm;\n\n    /* Finish password based key derivation to setup key in \"ctx\" */\n\n    if (EVP_PBE_CipherInit(algtmp->algorithm,\n                           (char *)pwri->pass, pwri->passlen,\n                           algtmp->parameter, kekctx, en_de) < 0) {\n        ERR_raise(ERR_LIB_CMS, ERR_R_EVP_LIB);\n        goto err;\n    }\n\n    /* Finally wrap/unwrap the key */\n\n    if (en_de) {\n\n        if (!kek_wrap_key(NULL, &keylen, ec->key, ec->keylen, kekctx, cms_ctx))\n            goto err;\n\n        key = OPENSSL_malloc(keylen);\n\n        if (key == NULL)\n            goto err;\n\n        if (!kek_wrap_key(key, &keylen, ec->key, ec->keylen, kekctx, cms_ctx))\n            goto err;\n        pwri->encryptedKey->data = key;\n        pwri->encryptedKey->length = keylen;\n    } else {\n        key = OPENSSL_malloc(pwri->encryptedKey->length);\n        if (key == NULL)\n            goto err;\n        if (!kek_unwrap_key(key, &keylen,\n                            pwri->encryptedKey->data,\n                            pwri->encryptedKey->length, kekctx)) {\n            ERR_raise(ERR_LIB_CMS, CMS_R_UNWRAP_FAILURE);\n            goto err;\n        }\n\n        OPENSSL_clear_free(ec->key, ec->keylen);\n        ec->key = key;\n        ec->keylen = keylen;\n\n    }\n\n    r = 1;\n\n err:\n    EVP_CIPHER_free(kekcipher);\n    EVP_CIPHER_CTX_free(kekctx);\n\n    if (!r)\n        OPENSSL_free(key);\n    X509_ALGOR_free(kekalg);\n\n    return r;\n\n}",
+      "to": [
+        "BEA5E938F1F9A287",
+        "B83433D99D978EFE",
+        "3B245AF2963A418E",
+        "E5B7188EDA4E343F",
+        "02741A972B3AFB9D",
+        "27835F85949E92D1",
+        "CFC6843A909A3B92",
+        "7384F3292DB4C38B",
+        "A1AB8D51E98BB134",
+        "63332FD41E4D39F7",
+        "962ECC90880F365F",
+        "7AB1DD5F57203862",
+        "F4104046E02EE7C8",
+        "A4F1AA23D7BA4B2A",
+        "BDC5275166288687",
+        "E6019B280DCFD11E",
+        "D42EC09F04C5BB35",
+        "9D0ABC5C720AD232",
+        "F9DD7CB0D426E01A",
+        "A3753C11EC6202A7",
+        "A905C71332122F41",
+        "2ED33E35C217218A",
+        "B57F96F537940F1C",
+        "1187AEC1C7BFA386",
+        "EF864276EE9EE004",
+        "A0192E6941185DC2"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "missing": false,
+      "context_needed": "not necessary: file content",
+      "sufficiency_claims": [
+        "recipient info",
+        "content key",
+        "PWRI",
+        "encrypt and decrypt key",
+        "that decryption is made if en_de is 0",
+        "that encryption is made if en_de is positive",
+        "password in recipient info",
+        "that 1 is returned on success",
+        "that 0 is returned on error",
+        "algorithm identifier"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "openssl/3F55C00B90735029": {
+      "name": "EVP_PKEY_decapsulate_init",
+      "path": "/repos/openssl/openssl/crypto/evp/kem.c",
+      "doc": "",
+      "code": "int EVP_PKEY_decapsulate_init(EVP_PKEY_CTX *ctx, const OSSL_PARAM params[])\n{\n    return evp_kem_init(ctx, EVP_PKEY_OP_DECAPSULATE, params, NULL);\n}",
+      "to": [
+        "463F5C2C33462D06"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "missing": false,
+      "context_needed": "yes, file content",
+      "sufficiency_claims": [
+        "a wrapper for evp_kem_init",
+        "Public key context for sign/verify",
+        "that decapsulate init is made",
+        "that auth key is taken from cache"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "openssl/7359F704B47F6FC2": {
+      "name": "ossl_crypto_new_ex_data_ex",
+      "path": "/repos/openssl/openssl/crypto/ex_data.c",
+      "doc": "\n Initialise a new CRYPTO_EX_DATA for use in a particular class - including\n calling new() callbacks for each index in the class used by this variable\n Thread-safe by copying a class's array of \"EX_CALLBACK\" entries\n in the lock, then using them outside the lock. Note this only applies\n to the global \"ex_data\" state (ie. class definitions), not 'ad' itself.\n ",
+      "code": "int ossl_crypto_new_ex_data_ex(OSSL_LIB_CTX *ctx, int class_index, void *obj,\n                               CRYPTO_EX_DATA *ad)\n{\n    int mx, i;\n    void *ptr;\n    EX_CALLBACK **storage = NULL;\n    EX_CALLBACK *stack[10];\n    EX_CALLBACKS *ip;\n    OSSL_EX_DATA_GLOBAL *global = ossl_lib_ctx_get_ex_data_global(ctx);\n\n    if (global == NULL)\n        return 0;\n\n    ip = get_and_lock(global, class_index, 1);\n    if (ip == NULL)\n        return 0;\n\n    ad->ctx = ctx;\n    ad->sk = NULL;\n    mx = sk_EX_CALLBACK_num(ip->meth);\n    if (mx > 0) {\n        if (mx < (int)OSSL_NELEM(stack))\n            storage = stack;\n        else\n            storage = OPENSSL_malloc(sizeof(*storage) * mx);\n        if (storage != NULL)\n            for (i = 0; i < mx; i++)\n                storage[i] = sk_EX_CALLBACK_value(ip->meth, i);\n    }\n    CRYPTO_THREAD_unlock(global->ex_data_lock);\n\n    if (mx > 0 && storage == NULL)\n        return 0;\n    for (i = 0; i < mx; i++) {\n        if (storage[i] != NULL && storage[i]->new_func != NULL) {\n            ptr = CRYPTO_get_ex_data(ad, i);\n            storage[i]->new_func(obj, ptr, ad, i,\n                                 storage[i]->argl, storage[i]->argp);\n        }\n    }\n    if (storage != stack)\n        OPENSSL_free(storage);\n    return 1;\n}",
+      "to": [
+        "24EBB33518A043AE",
+        "8696B7A515F66230",
+        "56CED43AFEFE723F",
+        "62A50DAD69E4ECB6",
+        "9519B78CB9C60A2C",
+        "540A0B49970C9E8D",
+        "196773DE144A85EA",
+        "75F6A40ED42A086A",
+        "ECEF15A61D15E637",
+        "E5B7188EDA4E343F",
+        "B83433D99D978EFE"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "missing": false,
+      "context_needed": "not necessary: project context",
+      "sufficiency_claims": [
+        "that a new CRYPTO_EX_DATA initialised",
+        "that \"EX_CALLBACK\" entries are copied",
+        "thread synchronization",
+        "the global \"ex_data\" state"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "openssl/196AC363B8FCD1F6": {
+      "name": "X509_check_host",
+      "path": "/repos/openssl/openssl/crypto/x509/v3_utl.c",
+      "doc": "",
+      "code": "int X509_check_host(X509 *x, const char *chk, size_t chklen,\n                    unsigned int flags, char **peername)\n{\n    if (chk == NULL)\n        return -2;\n    /*\n     * Embedded NULs are disallowed, except as the last character of a\n     * string of length 2 or more (tolerate caller including terminating\n     * NUL in string length).\n     */\n    if (chklen == 0)\n        chklen = strlen(chk);\n    else if (memchr(chk, '\\0', chklen > 1 ? chklen - 1 : chklen))\n        return -2;\n    if (chklen > 1 && chk[chklen - 1] == '\\0')\n        --chklen;\n    return do_x509_check(x, chk, chklen, flags, GEN_DNS, peername);\n}",
+      "to": [
+        "D14AECEB8F4412C2",
+        "E38B58784B3C8610",
+        "D00FFC501C6F7746"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "missing": false,
+      "context_needed": "yes, same file",
+      "sufficiency_claims": [
+        "that NULs are not allowed",
+        "that terminating NUL is excluded from the string length",
+        "that chklen is updated",
+        "DNS host",
+        "client-side DNS sub-domain pattern",
+        "dNSName",
+        "X.509 certificate"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "openssl/DEFE23332CC55EE1": {
+      "name": "ossl_quic_demux_release_urxe",
+      "path": "/repos/openssl/openssl/ssl/quic/quic_demux.c",
+      "doc": "\n Releases a URXE back to the demuxer. No reference must be made to the URXE or\n its buffer after calling this function. The URXE must not be in any queue;\n that is, its prev and next pointers must be NULL.\n ",
+      "code": "void ossl_quic_demux_release_urxe(QUIC_DEMUX *demux,\n                                  QUIC_URXE *e)\n{\n    assert(ossl_list_urxe_prev(e) == NULL && ossl_list_urxe_next(e) == NULL);\n    assert(e->demux_state == URXE_DEMUX_STATE_ISSUED);\n    ossl_list_urxe_insert_tail(&demux->urx_free, e);\n    e->demux_state = URXE_DEMUX_STATE_FREE;\n}",
+      "to": [
+        "4807E0B0D817B236",
+        "2AE1A576F1C4470E"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "missing": false,
+      "context_needed": "not necessary: same file",
+      "sufficiency_claims": [
+        "calling by user",
+        "return the URXE",
+        "adding the URXE to a free list",
+        "releasing the URXE back to demuxer",
+        "that the URXE must not be in any queue"
+      ],
+      "illegal_facts": [
+      ]
+    }
+  }
+}

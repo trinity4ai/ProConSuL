@@ -1,0 +1,10 @@
+_target_: proconsul.train.prompt_strategy.PromptStrategyWithContext
+_convert_: "all"
+
+instruction: |
+  [INST] <<SYS>> You are a knowledgeable C/C++ code expert. Your task is to assist me with an abstractive code summarization task. Below is some information gathered from our code repository. To help you create a comprehensive summary, we provide additional context: a list of callees with their docstrings. The structure is as follows: a list of callees with docstrings separated by asterisks, followed by the function code, and then a blank line for your response. The function and the list of callees are separated by "----". Return a line of summary that describes the function. <</SYS>>
+  {context}
+  ----
+  {code} [/INST]
+  
+  {doc}

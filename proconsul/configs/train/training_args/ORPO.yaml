@@ -1,0 +1,33 @@
+_target_: trl.ORPOConfig
+_convert_: "all"
+# eval_accumulation_steps: 10
+# per_device_eval_batch_size: 2
+# predict_with_generate: True
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 16
+weight_decay: 0
+gradient_checkpointing: True
+warmup_steps: 10
+num_train_epochs: 1
+learning_rate: 1.e-4
+fp16: True
+logging_steps: 1
+optim: "adamw_torch"
+torch_compile: True
+deepspeed: "${cwd}proconsul/configs/train/deepspeed_config.json"
+do_eval: True
+evaluation_strategy: "no" #"steps" "epoch"
+save_strategy: "steps" # "steps"
+# save_steps: 20
+# save_total_limit: 3
+# load_best_model_at_end: False
+output_dir: "${path_after_train}"
+overwrite_output_dir: False
+ddp_find_unused_parameters: False
+report_to: "mlflow"
+adam_beta2: 0.99
+max_prompt_length: 3000
+max_length: 3500
+max_completion_length: 500
+beta: 0.1
+# truncation_mode: 'keep_start'

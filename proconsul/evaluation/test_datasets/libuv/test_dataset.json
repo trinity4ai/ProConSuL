@@ -1,0 +1,210 @@
+{
+  "libuv/45BECD16456BA8DF": {
+    "name": "condvar_timedwait",
+    "path": "/repos/libuv/libuv/test/test-condvar.c",
+    "doc": "1. Wait on a signal (hopefully not timeout, else we'll hang).\n2. Ensure that the signaler finished. ",
+    "code": "static int condvar_timedwait(worker_config* c, const int* flag) {\n  int r;\n\n  r = 0;\n\n  uv_mutex_lock(&c->mutex);\n\n  /* Tell signal'er that I am waiting. */\n  uv_sem_post(&c->sem_waiting);\n\n  /* Wait until I get a non-spurious signal. */\n  do {\n    r = uv_cond_timedwait(&c->cond, &c->mutex, (uint64_t)(1 * 1e9)); /* 1 s */\n    ASSERT_OK(r); /* Should not time out. */\n  } while (*flag == 0);\n  ASSERT_EQ(1, *flag);\n\n  uv_mutex_unlock(&c->mutex);\n\n  /* Wait for my signal'er to finish. */\n  uv_sem_wait(&c->sem_signaled);\n  return r;\n}",
+    "to": [
+      "CC3D350B1C52BB82",
+      "29B6177F6A5C72FA",
+      "0928E23303CBBADA",
+      "8CC82355B1ABFD09"
+    ],
+    "system": false,
+    "vendor": false,
+    "comments_in_code": true,
+    "used_in_to": 0,
+    "used_in_fact": 2,
+    "used_in_test": true,
+    "context_needed": "",
+    "sufficiency_claims": [
+      "about waiting for a signal",
+      "about timeout",
+      "that timeout is 1 sec",
+      "that the process aborts, if the wait times out",
+      "about semaphore or mutex or condition variable",
+      "that worker thread using it",
+      "that 0 is returned on success"
+    ],
+    "illegal_facts": [
+      "that a waiter is notified",
+      "about buffer"
+    ]
+  },
+  "libuv/556CEE96610E5E40": {
+    "name": "condvar_wait",
+    "path": "/repos/libuv/libuv/test/test-condvar.c",
+    "doc": "1. Wait on a signal.\n2. Ensure that the signaler finished. ",
+    "code": "static int condvar_wait(worker_config* c, const int* flag) {\n  uv_mutex_lock(&c->mutex);\n\n  /* Tell signal'er that I am waiting. */\n  uv_sem_post(&c->sem_waiting);\n\n  /* Wait until I get a non-spurious signal. */\n  do {\n    uv_cond_wait(&c->cond, &c->mutex);\n  } while (*flag == 0);\n  ASSERT_EQ(1, *flag);\n\n  uv_mutex_unlock(&c->mutex);\n\n  /* Wait for my signal'er to finish. */\n  uv_sem_wait(&c->sem_signaled);\n\n  return 0;\n}",
+    "to": [
+      "CC3D350B1C52BB82",
+      "0928E23303CBBADA",
+      "8CC82355B1ABFD09"
+    ],
+    "system": false,
+    "vendor": false,
+    "comments_in_code": true,
+    "used_in_to": 0,
+    "used_in_fact": 2,
+    "used_in_test": true,
+    "context_needed": "",
+    "sufficiency_claims": [
+      "about wait for a signal",
+      "about no timeout",
+      "that it locks a mutex",
+      "about threads synchronisation",
+      "about semaphore or mutex or condition variable",
+      "that 0 is returned on success"
+    ],
+    "illegal_facts": [
+      "that listeners are notified",
+      "about UV_ETIMEDOUT"
+    ]
+  },
+  "libuv/492D2D0E47498B8B": {
+    "name": "send_listen_handles",
+    "path": "/repos/libuv/libuv/test/benchmark-multi-accept.c",
+    "doc": "Set up an IPC pipe server that hands out listen sockets to the worker\nthreads. It's kind of cumbersome for such a simple operation, maybe we\nshould revive uv_import() and uv_export().",
+    "code": "static void send_listen_handles(uv_handle_type type,\n                                unsigned int num_servers,\n                                struct server_ctx* servers) {\n  struct ipc_server_ctx ctx;\n  uv_loop_t* loop;\n  unsigned int i;\n\n  loop = uv_default_loop();\n  ctx.num_connects = num_servers;\n\n  if (type == UV_TCP) {\n    ASSERT_OK(uv_tcp_init(loop, (uv_tcp_t*) &ctx.server_handle));\n    ASSERT_OK(uv_tcp_bind((uv_tcp_t*) &ctx.server_handle,\n                          (const struct sockaddr*) &listen_addr,\n                          0));\n  }\n  else\n    ASSERT(0);\n  /* We need to initialize this pipe with ipc=0 - this is not a uv_pipe we'll\n   * be sending handles over, it's just for listening for new connections.\n   * If we accept a connection then the connected pipe must be initialized\n   * with ipc=1.\n   */\n  ASSERT_OK(uv_pipe_init(loop, &ctx.ipc_pipe, 0));\n  ASSERT_OK(uv_pipe_bind(&ctx.ipc_pipe, IPC_PIPE_NAME));\n  ASSERT_OK(uv_listen((uv_stream_t*) &ctx.ipc_pipe, 128, ipc_connection_cb));\n\n  for (i = 0; i < num_servers; i++)\n    uv_sem_post(&servers[i].semaphore);\n\n  ASSERT_OK(uv_run(loop, UV_RUN_DEFAULT));\n  uv_close((uv_handle_t*) &ctx.server_handle, NULL);\n  ASSERT_OK(uv_run(loop, UV_RUN_DEFAULT));\n\n  for (i = 0; i < num_servers; i++)\n    uv_sem_wait(&servers[i].semaphore);\n}",
+    "to": [
+      "44D758499244C8C8",
+      "29B6177F6A5C72FA",
+      "0FE74F25BA7D4978",
+      "657F538271089EC2",
+      "2073DCF435C03C24",
+      "9ABBF93B26212CDD",
+      "2BB4A5DF32755025",
+      "CC3D350B1C52BB82",
+      "D3404B27637042E1",
+      "8CC82355B1ABFD09"
+    ],
+    "system": false,
+    "vendor": false,
+    "comments_in_code": true,
+    "used_in_to": 0,
+    "used_in_fact": 1,
+    "used_in_test": true,
+    "context_needed": "",
+    "sufficiency_claims": [
+      "that a pipe server is set up",
+      "about listening to sockets",
+      "about semaphore or mutex or condition variable",
+      "that worker thread is using it"
+    ],
+    "illegal_facts": [
+      "that it is waiting for connections"
+    ]
+  },
+  "libuv/878903229ED721C8": {
+    "name": "worker",
+    "path": "/repos/libuv/libuv/src/threadpool.c",
+    "doc": "To avoid deadlock with uv_cancel() it's crucial that the worker\nnever holds the global mutex and the loop-local mutex at the same time.",
+    "code": "static void worker(void* arg) {\n  struct uv__work* w;\n  struct uv__queue* q;\n  int is_slow_work;\n\n  uv_sem_post((uv_sem_t*) arg);\n  arg = NULL;\n\n  uv_mutex_lock(&mutex);\n  for (;;) {\n    /* `mutex` should always be locked at this point. */\n\n    /* Keep waiting while either no work is present or only slow I/O\n       and we're at the threshold for that. */\n    while (uv__queue_empty(&wq) ||\n           (uv__queue_head(&wq) == &run_slow_work_message &&\n            uv__queue_next(&run_slow_work_message) == &wq &&\n            slow_io_work_running >= slow_work_thread_threshold())) {\n      idle_threads += 1;\n      uv_cond_wait(&cond, &mutex);\n      idle_threads -= 1;\n    }\n\n    q = uv__queue_head(&wq);\n    if (q == &exit_message) {\n      uv_cond_signal(&cond);\n      uv_mutex_unlock(&mutex);\n      break;\n    }\n\n    uv__queue_remove(q);\n    uv__queue_init(q);  /* Signal uv_cancel() that the work req is executing. */\n\n    is_slow_work = 0;\n    if (q == &run_slow_work_message) {\n      /* If we're at the slow I/O threshold, re-schedule until after all\n         other work in the queue is done. */\n      if (slow_io_work_running >= slow_work_thread_threshold()) {\n        uv__queue_insert_tail(&wq, q);\n        continue;\n      }\n\n      /* If we encountered a request to run slow I/O work but there is none\n         to run, that means it's cancelled => Start over. */\n      if (uv__queue_empty(&slow_io_pending_wq))\n        continue;\n\n      is_slow_work = 1;\n      slow_io_work_running++;\n\n      q = uv__queue_head(&slow_io_pending_wq);\n      uv__queue_remove(q);\n      uv__queue_init(q);\n\n      /* If there is more slow I/O work, schedule it to be run as well. */\n      if (!uv__queue_empty(&slow_io_pending_wq)) {\n        uv__queue_insert_tail(&wq, &run_slow_work_message);\n        if (idle_threads > 0)\n          uv_cond_signal(&cond);\n      }\n    }\n\n    uv_mutex_unlock(&mutex);\n\n    w = uv__queue_data(q, struct uv__work, wq);\n    w->work(w);\n\n    uv_mutex_lock(&w->loop->wq_mutex);\n    w->work = NULL;  /* Signal uv_cancel() that the work req is done\n                        executing. */\n    uv__queue_insert_tail(&w->loop->wq, &w->wq);\n    uv_async_send(&w->loop->wq_async);\n    uv_mutex_unlock(&w->loop->wq_mutex);\n\n    /* Lock `mutex` since that is expected at the start of the next\n     * iteration. */\n    uv_mutex_lock(&mutex);\n    if (is_slow_work) {\n      /* `slow_io_work_running` is protected by `mutex`. */\n      slow_io_work_running--;\n    }\n  }\n}",
+    "to": [
+      "CC3D350B1C52BB82",
+      "9B77CBA8FEE390DE",
+      "B5874A0FC0053144",
+      "0FBA720C43D3971B",
+      "57D85C9FBC1D946E",
+      "2D796C017CC605D2",
+      "E06A213CBAF465C4",
+      "A4A6047FB7ED94A9",
+      "85090E858B698254"
+    ],
+    "system": false,
+    "vendor": false,
+    "comments_in_code": true,
+    "used_in_to": 0,
+    "used_in_fact": 11,
+    "used_in_test": false,
+    "context_needed": "",
+    "sufficiency_claims": [
+      "that this is the worker thread",
+      "about slow I/O (input-output)",
+      "about executing work requests",
+      "about scheduling requests"
+    ],
+    "illegal_facts": [
+      "that the worker is sending requests"
+    ]
+  },
+  "libuv/8E1CA54051B8A690": {
+    "name": "heap_node_swap",
+    "path": "/repos/libuv/libuv/src/heap-inl.h",
+    "doc": "Swap parent with child. Child moves closer to the root, parent moves away. ",
+    "code": "static void heap_node_swap(struct heap* heap,\n                           struct heap_node* parent,\n                           struct heap_node* child) {\n  struct heap_node* sibling;\n  struct heap_node t;\n\n  t = *parent;\n  *parent = *child;\n  *child = t;\n\n  parent->parent = child;\n  if (child->left == child) {\n    child->left = parent;\n    sibling = child->right;\n  } else {\n    child->right = parent;\n    sibling = child->left;\n  }\n  if (sibling != NULL)\n    sibling->parent = child;\n\n  if (parent->left != NULL)\n    parent->left->parent = parent;\n  if (parent->right != NULL)\n    parent->right->parent = parent;\n\n  if (child->parent == NULL)\n    heap->min = child;\n  else if (child->parent->left == parent)\n    child->parent->left = child;\n  else\n    child->parent->right = child;\n}",
+    "to": [],
+    "system": false,
+    "vendor": false,
+    "comments_in_code": true,
+    "used_in_to": 2,
+    "used_in_fact": 3,
+    "used_in_test": false,
+    "context_needed": "no",
+    "sufficiency_claims": [
+      "about heap nodes",
+      "that parent and child nodes are swapped",
+      "that the min pointer is updated if needed"
+    ],
+    "illegal_facts": [
+      "that a node is removed or created",
+      "that heap is initialized"
+    ]
+  },
+  "libuv/B14E087E7C07FBAB": {
+    "name": "condvar_signal",
+    "path": "/repos/libuv/libuv/test/test-condvar.c",
+    "doc": "1. Signal a waiting waiter.\n2. Tell waiter we finished. ",
+    "code": "static void condvar_signal(worker_config* c, int* flag) {\n  /* Wait until waiter holds mutex and is preparing to wait. */\n  uv_sem_wait(&c->sem_waiting);\n\n  /* Make sure waiter has begun waiting. */\n  uv_mutex_lock(&c->mutex);\n\n  /* Help waiter differentiate between spurious and legitimate wakeup. */\n  ASSERT_OK(*flag);\n  *flag = 1;\n\n  if (c->use_broadcast)\n    uv_cond_broadcast(&c->cond);\n  else\n    uv_cond_signal(&c->cond);\n\n  uv_mutex_unlock(&c->mutex);\n\n  /* Done signaling. */\n  uv_sem_post(&c->sem_signaled);\n}",
+    "to": [
+      "8CC82355B1ABFD09",
+      "29B6177F6A5C72FA",
+      "CC3D350B1C52BB82"
+    ],
+    "system": false,
+    "vendor": false,
+    "comments_in_code": true,
+    "used_in_to": 0,
+    "used_in_fact": 4,
+    "used_in_test": true,
+    "context_needed": "",
+    "sufficiency_claims": [
+      "about signal to the worker thread",
+      "about wait for the waiter",
+      "about synchronisation between threads"
+    ],
+    "illegal_facts": [
+      "that it hangs on timeout",
+      "about bitstream"
+    ]
+  },
+  "libuv/E868167AA4B5C54C": {
+    "name": "uv__async_stop",
+    "path": "/repos/libuv/libuv/src/unix/async.c",
+    "doc": "async ",
+    "code": "void uv__async_stop(uv_loop_t* loop) {\n  struct uv__queue queue;\n  struct uv__queue* q;\n  uv_async_t* h;\n\n  if (loop->async_io_watcher.fd == -1)\n    return;\n\n  /* Make sure no other thread is accessing the async handle fd after the loop\n   * cleanup.\n   */\n  uv__queue_move(&loop->async_handles, &queue);\n  while (!uv__queue_empty(&queue)) {\n    q = uv__queue_head(&queue);\n    h = uv__queue_data(q, uv_async_t, queue);\n\n    uv__queue_remove(q);\n    uv__queue_insert_tail(&loop->async_handles, q);\n\n    uv__async_spin(h);\n  }\n\n  if (loop->async_wfd != -1) {\n    if (loop->async_wfd != loop->async_io_watcher.fd)\n      uv__close(loop->async_wfd);\n    loop->async_wfd = -1;\n  }\n\n  uv__io_stop(loop, &loop->async_io_watcher, POLLIN);\n  uv__close(loop->async_io_watcher.fd);\n  loop->async_io_watcher.fd = -1;\n}",
+    "to": [
+      "951B6E3339089C7A",
+      "9B77CBA8FEE390DE",
+      "B5874A0FC0053144",
+      "85090E858B698254",
+      "2D796C017CC605D2",
+      "A4A6047FB7ED94A9"
+    ],
+    "system": false,
+    "vendor": false,
+    "comments_in_code": true,
+    "used_in_to": 0,
+    "used_in_fact": 1,
+    "used_in_test": false,
+    "context_needed": "",
+    "sufficiency_claims": [
+      "that async watcher is stopped",
+      "about the file descriptor",
+      "about clean up remaining async handles"
+    ],
+    "illegal_facts": [
+      "that error is logged"
+    ]
+  }
+}

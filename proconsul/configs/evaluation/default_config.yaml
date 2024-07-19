@@ -1,0 +1,22 @@
+sufficiency_anchor_docs: "/path_to_anchor/summaries.json"
+sufficiency_base_docs: "${path_after_autometrics_calc}"
+sufficiency_stats_dir: "${cwd}data/after_metrics_calc/"
+
+auto_labels:
+  Triviality: "Triviality_auto"
+  Verbosity: "Verbosity_auto"
+
+semi_auto_labels:
+  Verbosity: "Verbosity"
+  Triviality: "Triviality"
+  Factuality: "Factuality_with_gpt"
+  Hallucinations: "Hallucinations_with_gpt"
+
+llm_messages:
+  fact_halluc_response: "gpt_fact_halluc_response"
+  fact_halluc_user_prompt: "gpt_fact_halluc_user_prompt"
+
+gpt_onetime_query_limit: 21
+
+doc_to_eval_key: 'generated_summary'
+seen_context_key: 'generated_context'

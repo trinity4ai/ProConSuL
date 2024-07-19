@@ -1,0 +1,5 @@
+max_tokens: 100
+temperature: 0.0
+early_stopping: False
+
+suppress_tokens: [13, 421, 320, 29905] # tokens for ['\n', '`', '\\']

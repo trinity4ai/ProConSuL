@@ -1,0 +1,164 @@
+{
+  "train": {},
+  "test": {
+    "libuv/67AEE9FDC1025962": {
+      "name": "uv__queue_split",
+      "path": "/repos/libuv/libuv/src/queue.h",
+      "doc": "",
+      "code": "static inline void uv__queue_split(struct uv__queue* h,\n                                   struct uv__queue* q,\n                                   struct uv__queue* n) {\n  n->prev = h->prev;\n  n->prev->next = n;\n  n->next = q;\n  h->prev = q->prev;\n  h->prev->next = h;\n  q->prev = n;\n}",
+      "to": [],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "missing": false,
+      "context_needed": "yes, usage is very useful",
+      "sufficiency_claims": [
+        "that a queue is split",
+        "that h and q are elements of one queue",
+        "that a piece of queue between h and q->prev is cut out",
+        "that n is replacing a piece of queue",
+        "that the cut-out piece of the queue is looped"
+      ],
+      "ToDo": "ask Ilya to review",
+      "illegal_facts": [
+      ]
+    },
+    "libuv/D3404B27637042E1": {
+      "name": "uv_run",
+      "path": "/repos/libuv/libuv/src/unix/core.c",
+      "doc": "",
+      "code": "int uv_run(uv_loop_t* loop, uv_run_mode mode) {\n  int timeout;\n  int r;\n  int can_sleep;\n\n  r = uv__loop_alive(loop);\n  if (!r)\n    uv__update_time(loop);\n\n  /* Maintain backwards compatibility by processing timers before entering the\n   * while loop for UV_RUN_DEFAULT. Otherwise timers only need to be executed\n   * once, which should be done after polling in order to maintain proper\n   * execution order of the conceptual event loop. */\n  if (mode == UV_RUN_DEFAULT && r != 0 && loop->stop_flag == 0) {\n    uv__update_time(loop);\n    uv__run_timers(loop);\n  }\n\n  while (r != 0 && loop->stop_flag == 0) {\n    can_sleep =\n        uv__queue_empty(&loop->pending_queue) &&\n        uv__queue_empty(&loop->idle_handles);\n\n    uv__run_pending(loop);\n    uv__run_idle(loop);\n    uv__run_prepare(loop);\n\n    timeout = 0;\n    if ((mode == UV_RUN_ONCE && can_sleep) || mode == UV_RUN_DEFAULT)\n      timeout = uv__backend_timeout(loop);\n\n    uv__metrics_inc_loop_count(loop);\n\n    uv__io_poll(loop, timeout);\n\n    /* Process immediate callbacks (e.g. write_cb) a small fixed number of\n     * times to avoid loop starvation.*/\n    for (r = 0; r < 8 && !uv__queue_empty(&loop->pending_queue); r++)\n      uv__run_pending(loop);\n\n    /* Run one final update on the provider_idle_time in case uv__io_poll\n     * returned because the timeout expired, but no events were received. This\n     * call will be ignored if the provider_entry_time was either never set (if\n     * the timeout == 0) or was already updated b/c an event was received.\n     */\n    uv__metrics_update_idle_time(loop);\n\n    uv__run_check(loop);\n    uv__run_closing_handles(loop);\n\n    uv__update_time(loop);\n    uv__run_timers(loop);\n\n    r = uv__loop_alive(loop);\n    if (mode == UV_RUN_ONCE || mode == UV_RUN_NOWAIT)\n      break;\n  }\n\n  /* The if statement lets gcc compile it to a conditional store. Avoids\n   * dirtying a cache line.\n   */\n  if (loop->stop_flag != 0)\n    loop->stop_flag = 0;\n\n  return r;\n}",
+      "to": [
+        "BC1AF51F34EEC011",
+        "B9A896FEC7C842FA",
+        "3874FCAB23517C27",
+        "9B77CBA8FEE390DE",
+        "1F54EA9A714F9F8F",
+        "2520B002133CC048",
+        "2BF344E2AF7558D2",
+        "8732F24BB488A95E",
+        "4A01FCE0D0D87CA7",
+        "F0A44D42A89E9776",
+        "4A9CECFC1FEC28D7",
+        "084AD0251D84B887",
+        "9C20DF8A13149C0C"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "missing": false,
+      "context_needed": "not necessary: project context: definitions in uv.h, tests - or test docs (design.rst)",
+      "sufficiency_claims": [
+        "encapsulating the event loop",
+        "processing I/O operations",
+        "that each loop runs in a separate thread",
+        "that it is not thread-safe",
+        "that the loop blocks for I/O",
+        "that the loop will run continuously if mode is UV_RUN_DEFAULT",
+        "that the loop will end if there are no active callbacks"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "libuv/B9BB65BE82D339A1": {
+      "name": "uv_udp_getsockname",
+      "path": "/repos/libuv/libuv/src/unix/udp.c",
+      "doc": "",
+      "code": "int uv_udp_getsockname(const uv_udp_t* handle,\n                       struct sockaddr* name,\n                       int* namelen) {\n\n  return uv__getsockpeername((const uv_handle_t*) handle,\n                             getsockname,\n                             name,\n                             namelen);\n}",
+      "to": [
+        "540DDF1BA7D7711B"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "missing": false,
+      "context_needed": "not necessary: project context (text docs udp.rst), standard C library",
+      "sufficiency_claims": [
+        "getting a local IP and port",
+        "that local address is returned",
+        "that the address is written to `name`",
+        "that the address length is written to `namelen`",
+        "that 0 is returned on success",
+        "that error code is returned on failure",
+        "that `struct sockaddr_storage` should be used for `name` to support IPv4 and IPv6",
+        "that standard `getsockname` function is used"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "libuv/1FAC6CB00AC0536C": {
+      "name": "uv_udp_try_send",
+      "path": "/repos/libuv/libuv/src/uv-common.c",
+      "doc": "",
+      "code": "int uv_udp_try_send(uv_udp_t* handle,\n                    const uv_buf_t bufs[],\n                    unsigned int nbufs,\n                    const struct sockaddr* addr) {\n  int addrlen;\n\n  addrlen = uv__udp_check_before_send(handle, addr);\n  if (addrlen < 0)\n    return addrlen;\n\n  return uv__udp_try_send(handle, bufs, nbufs, addr, addrlen);\n}",
+      "to": [
+        "B34F027C081BE217",
+        "8145F1BE04979713"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "missing": false,
+      "context_needed": "yes: project context (same package files)",
+      "sufficiency_claims": [
+        "checking UDP handle and address (or `addr`)",
+        "a message being sent",
+        "returning an error",
+        "multiple attempts to send a message",
+        "reattempting if signal occurred before message is sent",
+        "a standard `sendmsg` function",
+        "sending a message on a socket"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "libuv/ADEE6FB9D5EC697C": {
+      "name": "uv__metrics_set_provider_entry_time",
+      "path": "/repos/libuv/libuv/src/uv-common.c",
+      "doc": "",
+      "code": "void uv__metrics_set_provider_entry_time(uv_loop_t* loop) {\n  uv__loop_metrics_t* loop_metrics;\n  uint64_t now;\n\n  if (!(uv__get_internal_fields(loop)->flags & UV_METRICS_IDLE_TIME))\n    return;\n\n  now = uv_hrtime();\n  loop_metrics = uv__get_loop_metrics(loop);\n  uv_mutex_lock(&loop_metrics->lock);\n  loop_metrics->provider_entry_time = now;\n  uv_mutex_unlock(&loop_metrics->lock);\n}",
+      "to": [
+        "84552ADF6602E7B4",
+        "39401E214B7E0B17",
+        "1242FB3FDEC7BD02",
+        "C68450BC85E1E65E",
+        "E3DE0DF2630D53E5"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "missing": false,
+      "context_needed": "not necessary: project context (same file and H-file)",
+      "sufficiency_claims": [
+        "that provider entry time is set",
+        "using the current time",
+        "early return if the loop isn't configured with UV_METRICS_IDLE_TIME",
+        "that loop metrics are updated",
+        "synchronization or a mutex"
+      ],
+      "ToDo": "check that here is Yes for `thread safe`",
+      "illegal_facts": [
+      ]
+    }
+  }
+}

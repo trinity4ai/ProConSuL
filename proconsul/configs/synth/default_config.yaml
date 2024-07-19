@@ -1,0 +1,20 @@
+experiment: 
+  _target_: proconsul.synth.experiments.base.SynthExperiment
+  _convert_: "all"
+use_doc: False
+use_context: False
+
+tokenizer_max_length: 5012
+max_data_points: null # limit on amount of data for debug
+
+adapter_checkpoint: null
+batch_size: 4
+
+use_vllm: True
+
+defaults:
+  - bits_and_bytes: codellama
+  - generation: codellama
+  - generation_vllm: codellama
+  - prompt: synth_base_prompt # /train/prompt@prompt: base_prompt
+  - _self_

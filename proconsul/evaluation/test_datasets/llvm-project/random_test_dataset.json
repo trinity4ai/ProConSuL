@@ -1,0 +1,131 @@
+{
+  "train": {
+  },
+  "test": {
+    "llvm-project/F8F23E5D179661D3": {
+      "name": "clang::tidy::bugprone::UseAfterMoveFinder::getUsesAndReinits",
+      "path": "/repos/llvm-project/llvm-project/clang-tools-extra/clang-tidy/bugprone/UseAfterMoveCheck.cpp",
+      "doc": "",
+      "code": "void UseAfterMoveFinder::getUsesAndReinits(\n    const CFGBlock *Block, const ValueDecl *MovedVariable,\n    llvm::SmallVectorImpl<const DeclRefExpr *> *Uses,\n    llvm::SmallPtrSetImpl<const Stmt *> *Reinits) {\n  llvm::SmallPtrSet<const DeclRefExpr *, 1> DeclRefs;\n  llvm::SmallPtrSet<const DeclRefExpr *, 1> ReinitDeclRefs;\n\n  getDeclRefs(Block, MovedVariable, &DeclRefs);\n  getReinits(Block, MovedVariable, Reinits, &ReinitDeclRefs);\n\n  // All references to the variable that aren't reinitializations are uses.\n  Uses->clear();\n  for (const DeclRefExpr *DeclRef : DeclRefs) {\n    if (!ReinitDeclRefs.count(DeclRef))\n      Uses->push_back(DeclRef);\n  }\n\n  // Sort the uses by their occurrence in the source code.\n  std::sort(Uses->begin(), Uses->end(),\n            [](const DeclRefExpr *D1, const DeclRefExpr *D2) {\n              return D1->getExprLoc() < D2->getExprLoc();\n            });\n}",
+      "to": [
+        "76272419BE8458EB",
+        "8D8D190ACF65BEE1",
+        "EEC0ADCF4DD0463B",
+        "1F37B96F93245062",
+        "D731E4E949C55643",
+        "4F6B3F21E379880C"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "context_needed": "not necessary: std::sort, class context",
+      "sufficiency_claims": [
+        "references to the moved variable",
+        "that uses and reinits are separated",
+        "that uses are sorted",
+        "sort by occurrence in source code"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "llvm-project/9E3657E686049E5D": {
+      "name": "clang::tidy::google::UpgradeGoogletestCaseCheck::isLanguageVersionSupported",
+      "path": "/repos/llvm-project/llvm-project/clang-tools-extra/clang-tidy/google/UpgradeGoogletestCaseCheck.h",
+      "doc": "",
+      "code": "bool isLanguageVersionSupported(const LangOptions &LangOpts) const override {\n    return LangOpts.CPlusPlus;\n  }",
+      "to": [],
+      "system": false,
+      "macro": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "context_needed": "not necessary: project context",
+      "sufficiency_claims": [
+        "return true if C++ is supported",
+        "language version support",
+        "that LangOpts is checked"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "llvm-project/43F1C97FD36E67DB": {
+      "name": "clang::tidy::modernize::StmtAncestorASTVisitor::TraverseStmt",
+      "path": "/repos/llvm-project/llvm-project/clang-tools-extra/clang-tidy/modernize/LoopConvertUtils.cpp",
+      "doc": "Tracks a stack of parent statements during traversal.\n\nAll this really does is inject push_back() before running\nRecursiveASTVisitor::TraverseStmt() and pop_back() afterwards. The Stmt atop\nthe stack is the parent of the current statement (NULL for the topmost\nstatement).",
+      "code": "bool StmtAncestorASTVisitor::TraverseStmt(Stmt *Statement) {\n  StmtAncestors.insert(std::make_pair(Statement, StmtStack.back()));\n  StmtStack.push_back(Statement);\n  RecursiveASTVisitor<StmtAncestorASTVisitor>::TraverseStmt(Statement);\n  StmtStack.pop_back();\n  return true;\n}",
+      "to": [
+        "BCF344121C79D0F4"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "context_needed": "no",
+      "sufficiency_claims": [
+        "that a statement is traversed",
+        "tracking a statement",
+        "parent statements",
+        "that traverse is wrapped"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "llvm-project/CEE077E7827171C7": {
+      "name": "clang::tidy::modernize::UseUncaughtExceptionsCheck::registerMatchers",
+      "path": "/repos/llvm-project/llvm-project/clang-tools-extra/clang-tidy/modernize/UseUncaughtExceptionsCheck.cpp",
+      "doc": "",
+      "code": "void UseUncaughtExceptionsCheck::registerMatchers(MatchFinder *Finder) {\n  std::string MatchText = \"::std::uncaught_exception\";\n\n  // Using declaration: warning and fix-it.\n  Finder->addMatcher(\n      usingDecl(hasAnyUsingShadowDecl(hasTargetDecl(hasName(MatchText))))\n          .bind(\"using_decl\"),\n      this);\n\n  // DeclRefExpr: warning, no fix-it.\n  Finder->addMatcher(\n      declRefExpr(to(functionDecl(hasName(MatchText))), unless(callExpr()))\n          .bind(\"decl_ref_expr\"),\n      this);\n\n  auto DirectCallToUncaughtException = callee(expr(ignoringImpCasts(\n      declRefExpr(hasDeclaration(functionDecl(hasName(MatchText)))))));\n\n  // CallExpr: warning, fix-it.\n  Finder->addMatcher(callExpr(DirectCallToUncaughtException,\n                              unless(hasAncestor(initListExpr())))\n                         .bind(\"call_expr\"),\n                     this);\n  // CallExpr in initialisation list: warning, fix-it with avoiding narrowing\n  // conversions.\n  Finder->addMatcher(callExpr(DirectCallToUncaughtException,\n                              hasAncestor(initListExpr()))\n                         .bind(\"init_call_expr\"),\n                     this);\n}",
+      "to": [
+        "E2282B6DBCF12238",
+        "52CA0E0BE9F750A8",
+        "A5E3EABB4536B9C4",
+        "5CC0BB66CDBB1C5D",
+        "2621156B1AFA2388",
+        "D58B49B34FEE816D",
+        "92AF1966E8CBC6C8",
+        "F44DE37C43FC2179",
+        "D14B51874067C0A0"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "context_needed": "not necessary: project context",
+      "sufficiency_claims": [
+        "that matchers are added to the finder",
+        "that different usages of uncaught_exception are matched",
+        "that std::uncaught_exception is deprecated"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "llvm-project/1A705D4D5E886664": {
+      "name": "clang::tidy::utils::ExceptionAnalyzer::ExceptionInfo::reevaluateBehaviour",
+      "path": "/repos/llvm-project/llvm-project/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.cpp",
+      "doc": "Recalculate the 'Behaviour' for example after filtering.",
+      "code": "void ExceptionAnalyzer::ExceptionInfo::reevaluateBehaviour() {\n  if (ThrownExceptions.size() == 0)\n    if (ContainsUnknown)\n      Behaviour = State::Unknown;\n    else\n      Behaviour = State::NotThrowing;\n  else\n    Behaviour = State::Throwing;\n}",
+      "to": [
+        "122A06B6C1B12AEB"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "context_needed": "not necessary: class context",
+      "sufficiency_claims": [
+        "behaviour update or recalculation",
+        "that number of thrown exceptions is checked",
+        "unknown elements in the entity",
+        "that behaviour can be Throwing, NotThrowing and Unknown",
+        "using this function after filtering"
+      ],
+      "illegal_facts": [
+      ]
+    }
+  }
+}

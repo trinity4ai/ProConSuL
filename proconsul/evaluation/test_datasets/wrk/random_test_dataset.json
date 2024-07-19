@@ -1,0 +1,145 @@
+{
+  "train": {
+  },
+  "test": {
+    "wrk/66C679D4416703BE": {
+      "name": "aeApiAddEvent",
+      "path": "/repos/wrk/wrk/src/ae_epoll.c",
+      "doc": "",
+      "code": "static int aeApiAddEvent(aeEventLoop *eventLoop, int fd, int mask) {\n    aeApiState *state = eventLoop->apidata;\n    struct epoll_event ee = {0}; /* avoid valgrind warning */\n    /* If the fd was already monitored for some event, we need a MOD\n     * operation. Otherwise we need an ADD operation. */\n    int op = eventLoop->events[fd].mask == AE_NONE ?\n            EPOLL_CTL_ADD : EPOLL_CTL_MOD;\n\n    ee.events = 0;\n    mask |= eventLoop->events[fd].mask; /* Merge old events */\n    if (mask & AE_READABLE) ee.events |= EPOLLIN;\n    if (mask & AE_WRITABLE) ee.events |= EPOLLOUT;\n    ee.data.fd = fd;\n    if (epoll_ctl(state->epfd,op,fd,&ee) == -1) return -1;\n    return 0;\n}",
+      "to": [
+        "4D9E43C701EA13F7"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "non_function": false,
+      "context_needed": "yes, system library sys/epoll.h",
+      "sufficiency_claims": [
+        "monitoring fd",
+        "file descriptor",
+        "that event is either added or modified",
+        "that old events are merged if present for the fd",
+        "that event is registered in the event loop",
+        "interest list",
+        "I/O notification"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "wrk/32A96DF948B47052": {
+      "name": "sock_read",
+      "path": "/repos/wrk/wrk/src/net.c",
+      "doc": "",
+      "code": "status sock_read(connection *c, size_t *n) {\n    ssize_t r = read(c->fd, c->buf, sizeof(c->buf));\n    *n = (size_t) r;\n    return r >= 0 ? OK : ERROR;\n}",
+      "to": [
+        "9113C3E195A222B9"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "non_function": false,
+      "context_needed": "not necessary: project context (struct definition), system library unistd.h",
+      "sufficiency_claims": [
+        "reading the data from the network connection",
+        "saving the data to the buffer",
+        "that n stores the number of bytes read",
+        "that 1 is returned for any error",
+        "that 0 is returned on success"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "wrk/94FB838497FAB3F9": {
+      "name": "script_wrk_lookup",
+      "path": "/repos/wrk/wrk/src/script.c",
+      "doc": "",
+      "code": "static int script_wrk_lookup(lua_State *L) {\n    struct addrinfo *addrs;\n    struct addrinfo hints = {\n        .ai_family   = AF_UNSPEC,\n        .ai_socktype = SOCK_STREAM\n    };\n    int rc, index = 1;\n\n    const char *host    = lua_tostring(L, -2);\n    const char *service = lua_tostring(L, -1);\n\n    if ((rc = getaddrinfo(host, service, &hints, &addrs)) != 0) {\n        const char *msg = gai_strerror(rc);\n        fprintf(stderr, \"unable to resolve %s:%s %s\\n\", host, service, msg);\n        exit(1);\n    }\n\n    lua_newtable(L);\n    for (struct addrinfo *addr = addrs; addr != NULL; addr = addr->ai_next) {\n        script_addr_clone(L, addr);\n        lua_rawseti(L, -2, index++);\n    }\n\n    freeaddrinfo(addrs);\n    return 1;\n}",
+      "to": [
+        "125FA2A5FD1F3EC4",
+        "33B035631E112A8F",
+        "E4EBFA4734F57AAC",
+        "DB85E5D7BEE305B2",
+        "ED000313B2BB8DD2",
+        "1927A3C3D1E9F6F4",
+        "6C3A42CEA4D389EA",
+        "BF9A04CC8151B93A",
+        "05DED3AA95827827"
+      ],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "non_function": false,
+      "context_needed": "yes: standard library functions, project context: SCRIPTING file in the root",
+      "sufficiency_claims": [
+        "LuaJIT scripting",
+        "that host and service are got from stack",
+        "getaddrinfo",
+        "a new table with addresses",
+        "that program exit on error"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "wrk/89CCC15EFE53356B": {
+      "name": "zmalloc_size",
+      "path": "/repos/wrk/wrk/src/zmalloc.c",
+      "doc": "",
+      "code": "size_t zmalloc_size(void *ptr) {\n    void *realptr = (char*)ptr-PREFIX_SIZE;\n    size_t size = *((size_t*)realptr);\n    /* Assume at least that all the allocations are padded at sizeof(long) by\n     * the underlying allocator. */\n    if (size&(sizeof(long)-1)) size += sizeof(long)-(size&(sizeof(long)-1));\n    return size+PREFIX_SIZE;\n}",
+      "to": [],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "non_function": false,
+      "context_needed": "yes: project context: zmalloc.h type definitions and comments",
+      "sufficiency_claims": [
+        "the actual size of the allocating memory block",
+        "that in particular systems zmalloc provides this functionality",
+        "that extra memory size is taken from header"
+      ],
+      "illegal_facts": [
+      ]
+    },
+    "wrk/C57D2D44ACC350FF": {
+      "name": "stats_correct",
+      "path": "/repos/wrk/wrk/src/stats.c",
+      "doc": "",
+      "code": "void stats_correct(stats *stats, int64_t expected) {\n    for (uint64_t n = expected * 2; n <= stats->max; n++) {\n        uint64_t count = stats->data[n];\n        int64_t m = (int64_t) n - expected;\n        while (count && m > expected) {\n            stats->data[m] += count;\n            stats->count += count;\n            m -= expected;\n        }\n    }\n}",
+      "to": [],
+      "system": false,
+      "macro": false,
+      "macro_exp": false,
+      "macro_code": "",
+      "comments": "",
+      "vendor": false,
+      "decl": false,
+      "missing": false,
+      "context_needed": "not necessary: project context (stats struct definition)",
+      "sufficiency_claims": [
+        "statistics correction",
+        "preprocessing the statistics",
+        "statistical data adjustment to the expected range",
+        "stats direct modification",
+        "that data between expected and (max - expected) is increased"
+      ],
+      "illegal_facts": [
+      ]
+    }
+  }
+}

@@ -1,0 +1,13 @@
+model_checkpoint: "/path_to_vanilla/codellama-7B-instruct"
+response_template: "[/INST]"
+tokenizer_max_length: 2048
+save_best_model: true # save an extra copy of the best (or at least just last) model to the checkpoint dir called "best"
+max_data_points: null # limit on amount of data for debug
+
+defaults:
+  - lora: codellama
+  - training_args: codellama
+  - generation: codellama
+  - bits_and_bytes: codellama
+  - prompt: codellama_cxt
+  - _self_

@@ -1,0 +1,7 @@
+data_to_process_path: "${path_after_extraction}"
+path_to_save_processed: "${path_after_processing}"
+
+drop_if_no_callees_ratio: 0.0
+
+defaults:
+  - rec_sum_utils: config

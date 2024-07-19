@@ -1,0 +1,13 @@
+_target_: proconsul.train.prompt_strategy.PromptStrategyWithContext
+_convert_: "all"
+
+instruction: |
+  [INST] <<SYS>>
+  You are an expert in Programming. Below we have two sections separated by four hyphens: "----".
+  The second section is a C++/C code snippet.
+  Above that code snippet we have an additional info to help you out - a list of function callees with their docstrings (separated by an asterisk).
+  Return a line of summary that describes the function.
+  <<SYS>>
+  {context}
+  ----
+  {code} [/INST] {doc}

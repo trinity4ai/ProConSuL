@@ -1,0 +1,4 @@
+_target_: proconsul.train.prompt_strategy.BasePromptStrategy
+_convert_: "all"
+
+instruction: "[INST] <<SYS>> Write a docstring for the following C++ code. You should write a concise docstring: no code, only a few sentences. <</SYS>>\n{code}\n [/INST] Here is a revised version of the docstring with improved style (no code):\n\n"

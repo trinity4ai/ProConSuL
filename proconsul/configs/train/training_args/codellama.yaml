@@ -1,0 +1,27 @@
+_target_: transformers.Seq2SeqTrainingArguments
+_convert_: "all"
+per_device_eval_batch_size: 4
+#eval_accumulation_steps: 10
+predict_with_generate: True
+per_device_train_batch_size: 4
+gradient_accumulation_steps: 64
+weight_decay: 1.e-7
+gradient_checkpointing: True
+warmup_steps: 0.05 # CHANGED
+num_train_epochs: 2
+learning_rate: 3.e-5 # 3.e-4
+fp16: True
+logging_steps: 1
+optim: "adamw_torch"
+torch_compile: True
+deepspeed: "${cwd}proconsul/configs/train/deepspeed_config.json"
+do_eval: True
+evaluation_strategy: "steps" #"steps" "epoch"
+save_strategy: "steps" # "steps"
+eval_steps: 0.05
+save_steps: 0.05
+output_dir: "${path_after_train}"
+save_total_limit: 3
+#load_best_model_at_end: False
+ddp_find_unused_parameters: False
+report_to: "mlflow"

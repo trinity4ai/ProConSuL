@@ -1,0 +1,8 @@
+_target_: transformers.GenerationConfig
+_convert_: "all"
+max_new_tokens: 256
+min_new_tokens: 1
+early_stopping: False
+do_sample: False
+temperature: 1.0
+use_cache: True

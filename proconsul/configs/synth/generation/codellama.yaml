@@ -1,0 +1,10 @@
+_target_: transformers.GenerationConfig
+_convert_: "all"
+max_new_tokens: 100
+min_new_tokens: 1
+early_stopping: False
+do_sample: False
+temperature: 1.0
+use_cache: True
+begin_suppress_tokens: [376, 320, 11, 732, 29908, 29905] # start tokens for ['\"', '\\', '\brief ', '@']
+suppress_tokens: [13, 421, 320, 29905] # tokens for ['\n', '`', '\\']
