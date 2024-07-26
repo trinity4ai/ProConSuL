@@ -182,5 +182,14 @@ def cli_merge_all_metrics(config_dir: str, config_name: str):
     merge_all_metrics(create_hydra_config(config_dir, config_name))
 
 
+@cli.command(name='run_alignment', short_help='run RL-based alignment')
+@config_dir_option
+@config_name_option
+def cli_run_alignment(config_dir: str, config_name: str):
+    from proconsul.train.alignment import run_train
+
+    run_train(create_hydra_config(config_dir, config_name))
+
+
 if __name__ == '__main__':
     cli()
