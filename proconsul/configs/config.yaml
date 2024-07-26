@@ -1,9 +1,9 @@
 cwd: "./"
-run_name: "debug"
+run_name: "test"
 file_name: "${run_name}"
 
 path_after_extraction: "${cwd}data/after_extraction/${file_name}.json"
-path_after_processing: "${cwd}data/after_processing/${file_name}.json"
+path_after_processing: "${cwd}datasets/SFT_obfuscated_dataset.json"
 path_after_synth: "${cwd}data/after_synth/${file_name}.json"
 path_after_synth_final: "${cwd}data/after_processing/${file_name}_synth_final.json"
 path_after_dedup_train: "${cwd}data/after_processing/${file_name}_deduped.json"
