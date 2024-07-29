@@ -38,3 +38,4 @@ jupyterlab==3.6.7
 ipywidgets==8.0.4
 build~=1.0
 thefuzz~=0.22.1
+jupyterlab~=3.6.7
