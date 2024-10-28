@@ -6,7 +6,7 @@ Supplementary materials for the paper submission to EMNLP 2024.
 ## Installation
 
 ```
-git clone https://github.com/TypingCat13/ProConSuL.git && cd ProConSuL && pip install .
+git clone https://github.com/trinity4ai/ProConSuL.git && cd ProConSuL && pip install .
 ```
 
 ## Training
