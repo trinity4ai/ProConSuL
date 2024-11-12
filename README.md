@@ -1,7 +1,7 @@
 # ProConSuL: Project Context for Code Summarization with LLMs
 We propose Project Context for Code Summarization with LLMs (ProConSuL), a new framework to provide a large language model (LLM) with precise information about the code structure from program analysis methods such as a compiler or IDE language services and use task decomposition derived from the code structure. ProConSuL builds a call graph to provide the context from callees and uses a two-phase training method (SFT+ preference alignment) to train the model to use the project context. We also provide a new evaluation benchmark for C/C++ functions and a set of proxy metrics. Experimental results demonstrate that ProConSuL allows to significantly improve code summaries and reduce the number of hallucinations compared to the base model (CodeLlama-7B-instruct). We make our code and dataset available here.
 
-[Paper](https://github.com/trinity4ai/ProConSuL) | [Installation](#installation) | [Training](#training) | [Prediction](#prediction) | [Evaluation](#evaluation)
+[Paper](https://aclanthology.org/2024.emnlp-industry.65/) | [Installation](#installation) | [Training](#training) | [Prediction](#prediction) | [Evaluation](#evaluation)
 
 ## Installation
 
